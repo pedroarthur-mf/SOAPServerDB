@@ -8,6 +8,8 @@ import javax.jws.soap.SOAPBinding;
 import javax.jws.soap.SOAPBinding.Style;
 import javax.ws.rs.core.Response;
 
+import client.DataBaseInfo;
+
 @WebService
 @SOAPBinding(style = Style.RPC)
 public interface Access {
@@ -18,7 +20,7 @@ public interface Access {
 	public Response queryExecute(String query) throws SQLException, InterruptedException;
 	
 	@WebMethod
-	public void connectDB(String url, String user, String password) throws SQLException, ClassNotFoundException;
+	public void connectDB(DataBaseInfo db) throws SQLException, ClassNotFoundException;
 
 	@WebMethod
 	public void closeDB() throws SQLException;

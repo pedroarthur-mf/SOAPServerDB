@@ -9,6 +9,8 @@ import java.sql.Statement;
 import javax.jws.WebService;
 import javax.ws.rs.core.Response;
 
+import client.DataBaseInfo;
+
 @WebService(endpointInterface = "service.Access")
 public class QueryExecutor implements Access {
 	private Connection connection;
@@ -49,10 +51,10 @@ public class QueryExecutor implements Access {
 	}
 
 	@Override
-	public void connectDB(String url, String user, String password) throws SQLException, ClassNotFoundException {
+	public void connectDB(DataBaseInfo db) throws SQLException, ClassNotFoundException {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			this.connection = DriverManager.getConnection(url, user, password);
+			this.connection = DriverManager.getConnection(db.getBD_URL(), db.getUser(), db.getPassword());
 
 //			return Response.ok("Banco conectado.").build();
 		} catch (SQLException e) {
