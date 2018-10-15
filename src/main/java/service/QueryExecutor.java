@@ -9,44 +9,52 @@ import java.sql.Statement;
 import javax.jws.WebService;
 import javax.ws.rs.core.Response;
 
+import client.DataBaseInfo;
+
 @WebService(endpointInterface = "service.Access")
 public class QueryExecutor implements Access {
 	private Connection connection;
+	private ReadWriteLock nlock = new ReadWriteLock();
 
 	@Override
 	public ResultQuery querySelect(String query) throws SQLException {
 		ResultQuery queryResult = null;
 		try (Statement stmt = this.connection.createStatement()) {
-
+			nlock.lockRead();
 			ResultSet result = stmt.executeQuery(query);
 			queryResult = new ResultQuery(result);
 			return queryResult;
-		} catch (SQLException e) {
+		} catch (SQLException | InterruptedException e) {
 //			return Response.status(400).build();
 			throw new SQLException("Erro ao executar query de busca.");
 
+		} finally {
+			nlock.unlockRead();
 		}
 	}
 
 	@Override
-	public Response queryExecute(String query) throws SQLException {
+	public Response queryExecute(String query) throws SQLException, InterruptedException {
+		
 		try (Statement stmt = this.connection.createStatement()) {
-
+			nlock.lockWrite();
 			stmt.executeUpdate(query);
 
 			return Response.ok("Operação concluida.").build();
-		} catch (SQLException e) {
+		} catch (SQLException | InterruptedException e) {
 //			return Response.status(400).build();
 			throw new SQLException("Erro ao executar query.");
+		} finally {
+			nlock.unlockWrite();
 		}
 
 	}
 
 	@Override
-	public void connectDB(String url, String user, String password) throws SQLException, ClassNotFoundException {
+	public void connectDB(DataBaseInfo db) throws SQLException, ClassNotFoundException {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			this.connection = DriverManager.getConnection(url, user, password);
+			this.connection = DriverManager.getConnection(db.getBD_URL(), db.getUser(), db.getPassword());
 
 //			return Response.ok("Banco conectado.").build();
 		} catch (SQLException e) {
@@ -55,6 +63,14 @@ public class QueryExecutor implements Access {
 		} catch (ClassNotFoundException e) {
 //			return Response.serverError().build();
 			throw new ClassNotFoundException("Erro ao Conectar com drive JDBC.");
+		}
+	}
+	
+	public void closeDB() throws SQLException {
+		try {
+			this.connection.close();
+		} catch (Exception e) {
+			throw new SQLException("Erro ao fechar a conexão com o banco de dados");
 		}
 	}
 }
